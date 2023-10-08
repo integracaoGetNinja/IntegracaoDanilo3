@@ -30,27 +30,35 @@
 
 """
 from flask import Flask, jsonify
-import signal
+import threading
 from utils import apiLIUtils
 
 app = Flask(__name__)
 
 
-def handler(signum, frame):
-    raise TimeoutError("A operação demorada excedeu o tempo limite.")
-
-
-@app.route("/atualizar_base")
-def atualizar_base():
+def rota_demorada():
     try:
-        signal.signal(signal.SIGALRM, handler)
-        signal.alarm(60)
+        # Define um limite de tempo para a função demorada (10 segundos neste caso)
         resultado = apiLIUtils.get_all_orders()
-        signal.alarm(0)
         return jsonify(resultado)
     except TimeoutError as e:
         return jsonify(error=str(e)), 500
 
+
+@app.route("/atualizar_base")
+def atualizar_base():
+    return run_with_timeout()
+
+
+def run_with_timeout():
+    timeout = 120  # Defina o tempo limite em segundos
+    thread = threading.Thread(target=rota_demorada)
+    thread.start()
+    thread.join(timeout)
+    if thread.is_alive():
+        thread._stop()  # Para a execução da thread se estiver demorando demais
+        return jsonify(error="A operação demorada excedeu o tempo limite."), 500
+    return rota_demorada()
 
 
 if __name__ == "__main__":
