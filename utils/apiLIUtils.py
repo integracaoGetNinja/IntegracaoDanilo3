@@ -170,6 +170,4 @@ def update_order_status(order_id, status):
     # print(response.json())
 
 
-responseResult = get_all_orders()
-print(responseResult)
-print("resultados", len(responseResult))
+

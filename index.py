@@ -37,11 +37,7 @@ app = Flask(__name__)
 
 @app.route("/atualizar_base")
 def atualizar_base():
-    args = request.args
-
-    limit = args.get("limit")
-
-    return jsonify(apiLIUtils.get_all_orders(limit))
+    return jsonify(apiLIUtils.get_all_orders())
 
 
 if __name__ == "__main__":
