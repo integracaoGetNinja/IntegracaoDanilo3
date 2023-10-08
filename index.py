@@ -29,15 +29,28 @@
     pedido_efetuado
 
 """
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify
+import signal
 from utils import apiLIUtils
 
 app = Flask(__name__)
 
 
+def handler(signum, frame):
+    raise TimeoutError("A operação demorada excedeu o tempo limite.")
+
+
 @app.route("/atualizar_base")
 def atualizar_base():
-    return jsonify(apiLIUtils.get_all_orders())
+    try:
+        signal.signal(signal.SIGALRM, handler)
+        signal.alarm(60)
+        resultado = apiLIUtils.get_all_orders()
+        signal.alarm(0)
+        return jsonify(resultado)
+    except TimeoutError as e:
+        return jsonify(error=str(e)), 500
+
 
 
 if __name__ == "__main__":
