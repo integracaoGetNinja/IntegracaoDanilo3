@@ -72,7 +72,7 @@ function getDataClient(dataOrders) {
             var isFirst = true;
 
             envios.forEach(function(envio) {
-                var dataObjeto = new Date(envio.data_modificacao);
+                var dataObjeto = new Date(responseData.data_modificacao);
                 var dataFormatada = null;
 
                 if (envio.situacao.aprovado) {
@@ -80,6 +80,13 @@ function getDataClient(dataOrders) {
                 }
 
                 if (isFirst) {
+
+                    var meio_pagamento;
+
+                    if (responseData.pagamentos[0].forma_pagamento){
+                        meio_pagamento = responseData.pagamentos[0].forma_pagamento.nome;
+                    }
+
                     dataOrder.email = responseData.cliente.email;
                     dataOrder.nome = responseData.cliente.nome;
                     dataOrder.telefone = responseData.cliente.telefone_celular;
@@ -88,8 +95,15 @@ function getDataClient(dataOrders) {
                     dataOrder.idCodigo = envio.id;
                     dataOrder.prazo = envio.prazo;
                     dataOrder.data_pagamento = dataFormatada;
+                    dataOrder.meio_pagamento = meio_pagamento;
                     isFirst = false;
                 } else {
+                    var meio_pagamento;
+
+                    if (responseData.pagamentos[0].forma_pagamento){
+                        meio_pagamento = responseData.pagamentos[0].forma_pagamento.nome;
+                    }
+
                     updatedDataOrders.push({
                         'email': responseData.cliente.email,
                         'nome': responseData.cliente.nome,
@@ -98,18 +112,25 @@ function getDataClient(dataOrders) {
                         'codigo_rastreio': envio.objeto,
                         'idCodigo':envio.id,
                         'prazo': envio.prazo,
-                        'data_pagamento': dataFormatada
+                        'data_pagamento': dataFormatada,
+                        'meio_pagamento': meio_pagamento
                     });
                 }
             });
         } else {
             var firstEnvio = responseData.envios[0];
           
-            var firstEnvioDataObjeto = new Date(firstEnvio.data_modificacao);
+            var firstEnvioDataObjeto = new Date(responseData.data_modificacao);
             var firstEnvioDataFormatada = null;
 
             if (responseData.situacao.aprovado) {
                 firstEnvioDataFormatada = Utilities.formatDate(firstEnvioDataObjeto, 'GMT', 'dd/MM/yyyy');
+            }
+            
+            var meio_pagamento;
+
+            if (responseData.pagamentos[0].forma_pagamento){
+                meio_pagamento = responseData.pagamentos[0].forma_pagamento.nome;
             }
 
             dataOrder.email = responseData.cliente.email;
@@ -120,6 +141,7 @@ function getDataClient(dataOrders) {
             dataOrder.idCodigo = firstEnvio.id;
             dataOrder.prazo = firstEnvio.prazo;
             dataOrder.data_pagamento = firstEnvioDataFormatada;
+            dataOrder.meio_pagamento = meio_pagamento;
         }
 
         updatedDataOrders.push(dataOrder);
@@ -161,11 +183,12 @@ function atualizar_base(){
   var col_nome_cliente = 5;
   var col_celular = 6;
   var col_email = 7;
-  var col_valor = 8;
-  var col_transportadora = 9;
-  var col_data_pagamento = 10;
-  var col_dias_entrega = 11;
-  var col_idCodigo = 13;
+  var col_meio_pagamento = 8;
+  var col_valor = 9;
+  var col_transportadora = 10;
+  var col_data_pagamento = 11;
+  var col_dias_entrega = 12;
+  var col_idCodigo = 14;
 
 
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
@@ -211,8 +234,9 @@ function atualizar_base(){
     sheet.getRange(linha, col_nome_cliente).setValue(order.nome);
     sheet.getRange(linha, col_celular).setValue(order.telefone);
     sheet.getRange(linha, col_email).setValue(order.email);
-    sheet.getRange(linha, col_valor).setValue(order.valor);
+    sheet.getRange(linha, col_valor).setValue( "R$ " + order.valor);
     sheet.getRange(linha, col_idCodigo).setValue(order.idCodigo);
+    sheet.getRange(linha, col_meio_pagamento).setValue(order.meio_pagamento);
 
     var nome_transportadora;
 
@@ -236,7 +260,11 @@ function atualizar_base(){
         nome_transportadora = "Motoboy";
         break;
       case "ISP_1_9129":
-        nome_transportadora = "Retirar na Loja"
+        nome_transportadora = "Retirar na Loja";
+        break;
+      case "ISP_1_9129":
+        nome_transportadora = "Retirar na loja"; 
+        break;
       default:
         console.log(order.transportadora);
         console.log(typeof(order.transportadora));
@@ -293,7 +321,7 @@ function atualizar_status(){
           status = statusValorPlanilha;
           break;
     }
-
+    
 
     var numero = sheet.getRange(linha, col_n_pedido).getValue();
 
@@ -310,7 +338,7 @@ function enviar_codigo_rastreio(){
   var linha = 8;
   var col_status = 2;
   var col_cd_rastreio = 3;
-  var col_idCodigo = 13;
+  var col_idCodigo = 14;
 
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
 
@@ -341,7 +369,7 @@ function enviar_codigo_rastreio(){
             };
 
             var response = UrlFetchApp.fetch(url, options);
-  
+            sheet.getRange(linha, col_status).setValue("Enviado");
             // Você pode tratar a resposta aqui, se necessário
             Logger.log(response.getContentText());
         }

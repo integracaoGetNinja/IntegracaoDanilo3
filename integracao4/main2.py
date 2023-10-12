@@ -37,26 +37,40 @@ def get_datas(dataInicial, dataFinal):
 
         if len(itens) > 1:
             for item in itens:
-                orderClean.append(
-                    {
-                        "telefone": responseSrc.get('cliente').get('telefone_celular'),
-                        "nomeCliente": responseSrc.get('cliente').get('nome'),
-                        "email": responseSrc.get('cliente').get('email'),
-                        "quatidadeCompras": item.get('quantidade'),
-                        "valores": responseSrc.get('pagamentos')[0].get('valor_pago')
-                    }
-                )
-        else:
-            orderClean.append(
-                {
+                client = {
                     "telefone": responseSrc.get('cliente').get('telefone_celular'),
                     "nomeCliente": responseSrc.get('cliente').get('nome'),
                     "email": responseSrc.get('cliente').get('email'),
-                    "quatidadeCompras": itens[0].get('quantidade'),
+                    "quatidadeCompras": int(item.get('quantidade').replace(".", "")),
                     "valores": responseSrc.get('pagamentos')[0].get('valor_pago')
                 }
-            )
-    return orderClean
+                orderClean = verifyAddedInListClients(orderClean, client)
+        else:
+            client = {
+                "telefone": responseSrc.get('cliente').get('telefone_celular'),
+                "nomeCliente": responseSrc.get('cliente').get('nome'),
+                "email": responseSrc.get('cliente').get('email'),
+                "quatidadeCompras": int(itens[0].get('quantidade').replace('.', '')),
+                "valores": responseSrc.get('pagamentos')[0].get('valor_pago')
+            }
+
+            orderClean = verifyAddedInListClients(orderClean, client)
+
+    return sorted(orderClean, key=lambda x: x.get('quatidadeCompras'), reverse=True)
+
+
+def verifyAddedInListClients(listClients, clients):
+    inList = False
+    for i in listClients:
+        if i.get('nomeCliente') == clients.get('nomeCliente'):
+            i['quatidadeCompras'] += clients.get('quatidadeCompras')
+            inList = True
+            break
+
+    if not inList:
+        listClients.append(clients)
+
+    return listClients
 
 
 def get_data_product(dataInicial, dataFinal):
@@ -116,6 +130,7 @@ def get_data_product(dataInicial, dataFinal):
             )
     return listProducts
 
+
 def verifyAddedInList(listProducts, product):
     inList = False
     for i in listProducts:
@@ -130,4 +145,4 @@ def verifyAddedInList(listProducts, product):
     return listProducts
 
 
-print(get_data_product("2023-10-1", "2023-10-11"))
+print(get_datas("2023-10-1", "2023-10-11"))
