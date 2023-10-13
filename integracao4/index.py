@@ -50,5 +50,10 @@ def callback():
     )
 
 
+@app.route("/token")
+def token():
+    return col_bling.find_one({"_id": 0}).get('token')
+
+
 if __name__ == "__main__":
     app.run()
